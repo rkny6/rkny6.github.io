@@ -1,0 +1,85 @@
+---
+import type { Locale } from '@/i18n/config';
+import { localizedPath } from '@/i18n/config';
+import { t, tf } from '@/i18n';
+import { site } from '@/data/site';
+import { getPosts, getPostTranslation, postSlug, readingTime } from '@/lib/blog';
+import { formatDate, isoDate } from '@/lib/format';
+import PostListItem from '@/components/PostListItem.astro';
+import Window from '@/components/Window.astro';
+
+interface Props {
+  lang: Locale;
+  post: Awaited<ReturnType<typeof getPosts>>[number];
+}
+
+const { lang, post } = Astro.props;
+const slug = postSlug(post);
+const minutes = readingTime(post.body);
+const translation = await getPostTranslation(post);
+
+// Related posts: share a tag with this one.
+const posts = await getPosts(lang);
+const related = posts
+  .filter((p) => postSlug(p) !== slug && p.data.tags.some((tag) => post.data.tags.includes(tag)))
+  .slice(0, 2);
+---
+
+<div class="wrap page">
+  <Window title={t(lang, 'blog.title')} class="fade-in">
+    <p style="margin-bottom: var(--sp-6)">
+      <a class="back-link" href={localizedPath(lang, '/blog')}>{t(lang, 'blog.back')}</a>
+    </p>
+
+    <article class="measure">
+    <header class="article-header">
+      <div class="article-meta">
+        <time datetime={isoDate(post.data.date)}>{t(lang, 'blog.published')} {formatDate(post.data.date, lang)}</time>
+        {post.data.updated && (
+          <time datetime={isoDate(post.data.updated)}>{t(lang, 'blog.updated')} {formatDate(post.data.updated, lang)}</time>
+        )}
+        <span>{tf(lang, 'blog.readTime', { n: minutes })}</span>
+      </div>
+      <h1>{post.data.title}</h1>
+      <p class="lede">{post.data.description}</p>
+      {
+        !translation && (
+          <p class="form-note">
+            {tf(lang, 'blog.noTranslation', { lang: lang === 'en' ? 'English' : '中文' })}
+          </p>
+        )
+      }
+    </header>
+
+    <div class="prose">
+      <slot />
+    </div>
+
+    {
+      post.data.tags.length > 0 && (
+        <footer class="post-tags">
+          {post.data.tags.map((tag) => (
+            <a class="tag" href={localizedPath(lang, `/blog/tag/${tag}`)}>{tag}</a>
+          ))}
+        </footer>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <section class="section">
+          <div class="section-head">
+            <h2>{t(lang, 'projects.related')}</h2>
+          </div>
+          <ul class="post-list">
+            {related.map((p) => (
+              <PostListItem post={p} lang={lang} />
+            ))}
+          </ul>
+        </section>
+      )
+    }
+    </article>
+  </Window>
+</div>
+

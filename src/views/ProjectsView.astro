@@ -1,0 +1,82 @@
+---
+import type { Locale } from '@/i18n/config';
+import { localizedPath } from '@/i18n/config';
+import { t } from '@/i18n';
+import { PROJECT_CATEGORIES, type ProjectCategory } from '@/data/taxonomy';
+import { getProjects } from '@/lib/projects';
+import ProjectListItem from '@/components/ProjectListItem.astro';
+import Window from '@/components/Window.astro';
+
+interface Props {
+  lang: Locale;
+  category?: ProjectCategory;
+}
+
+const { lang, category } = Astro.props;
+const all = await getProjects(lang);
+const filtered = category ? all.filter((p) => p.category === category) : all;
+---
+
+<div class="wrap page">
+  <Window title={t(lang, 'projects.title')} heading class="fade-in">
+    <p class="muted measure" style="margin-bottom: var(--sp-6)">{t(lang, 'projects.intro')}</p>
+
+  <nav class="filter-bar" aria-label={t(lang, 'blog.tags')}>
+    <a
+      href={localizedPath(lang, '/projects')}
+      class="tag"
+      aria-pressed={category ? 'false' : 'true'}
+      data-filter=""
+    >
+      {t(lang, 'projects.filter.all')}
+    </a>
+    {PROJECT_CATEGORIES.map((cat) => (
+      <a
+        href={localizedPath(lang, '/projects')}
+        class="tag"
+        aria-pressed={category === cat ? 'true' : 'false'}
+        data-filter={cat}
+      >
+        {t(lang, `category.${cat}`)}
+      </a>
+    ))}
+  </nav>
+
+  <ul class="project-list" data-project-list>
+    {filtered.map((project) => <ProjectListItem project={project} lang={lang} />)}
+  </ul>
+
+  <p class="muted" data-empty hidden style="margin-top: var(--sp-6)">{t(lang, 'projects.empty')}</p>
+  </Window>
+</div>
+
+<script>
+  // Client-side category filtering: rows carry data-category, links carry
+  // data-filter. The server-rendered state is the no-JS fallback.
+  const links = document.querySelectorAll<HTMLAnchorElement>('[data-filter]');
+  const rows = document.querySelectorAll<HTMLElement>('[data-project-list] > li');
+  const empty = document.querySelector<HTMLElement>('[data-empty]');
+
+  links.forEach((link) => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const filter = link.dataset.filter ?? '';
+      links.forEach((l) => l.setAttribute('aria-pressed', String(l === link)));
+      let visible = 0;
+      rows.forEach((row) => {
+        const show = !filter || row.dataset.category === filter;
+        (row as HTMLElement).hidden = !show;
+        if (show) visible++;
+      });
+      if (empty) empty.hidden = visible !== 0;
+      history.replaceState(null, '', filter ? `#${filter}` : location.pathname);
+    });
+  });
+
+  // Restore filter from the URL hash on load.
+  const hash = decodeURIComponent(location.hash.slice(1));
+  if (hash) {
+    const match = [...links].find((l) => l.dataset.filter === hash);
+    match?.click();
+  }
+</script>

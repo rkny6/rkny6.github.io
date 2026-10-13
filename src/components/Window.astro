@@ -1,0 +1,25 @@
+---
+interface Props {
+  /** Title shown in the fake window title bar (rendered uppercase). */
+  title: string;
+  class?: string;
+  /** Render the title as the page's h1 (single-window pages). */
+  heading?: boolean;
+}
+
+const { title, class: className, heading = false } = Astro.props;
+---
+
+<section class:list={['window', className]}>
+  <div class="window-bar">
+    {heading ? <h1 class="window-title">{title}</h1> : <span class="window-title">{title}</span>}
+    <span class="window-btns" aria-hidden="true">
+      <span class="window-btn">_</span>
+      <span class="window-btn">□</span>
+      <span class="window-btn">×</span>
+    </span>
+  </div>
+  <div class="window-body">
+    <slot />
+  </div>
+</section>

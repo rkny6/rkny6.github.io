@@ -1,0 +1,134 @@
+---
+import type { Locale } from '@/i18n/config';
+import { t } from '@/i18n';
+import { askService } from '@/lib/askService';
+
+interface Props {
+  lang: Locale;
+  compact?: boolean;
+}
+
+const { lang, compact = false } = Astro.props;
+const isPlaceholder = askService.mode === 'placeholder';
+---
+
+<form class:list={['ask-form', { compact }]} data-ask-form novalidate>
+  {
+    !compact && (
+      <div class="ask-fields">
+        <div class="field half">
+          <label for={`ask-name-${lang}`}>
+            {t(lang, 'ask.name')} <span class="opt">— {t(lang, 'ask.namePlaceholder')}</span>
+          </label>
+          <input id={`ask-name-${lang}`} name="name" type="text" autocomplete="name" maxlength="80" />
+        </div>
+        <div class="field half">
+          <label for={`ask-email-${lang}`}>
+            {t(lang, 'ask.email')} <span class="opt">— {t(lang, 'ask.emailPlaceholder')}</span>
+          </label>
+          <input id={`ask-email-${lang}`} name="email" type="email" autocomplete="email" maxlength="160" />
+        </div>
+      </div>
+    )
+  }
+
+  <div class="field">
+    <label for={`ask-message-${lang}`}>{t(lang, 'ask.message')}</label>
+    <textarea
+      id={`ask-message-${lang}`}
+      name="message"
+      required
+      maxlength="2000"
+      placeholder={t(lang, 'ask.messagePlaceholder')}
+    ></textarea>
+  </div>
+
+  <div class="ask-actions">
+    <button type="submit" class="btn btn-primary" data-ask-submit>{t(lang, 'ask.submit')}</button>
+    <span class="form-note">{t(lang, 'ask.privacy')}</span>
+  </div>
+
+  <output class="form-status" data-ask-status hidden></output>
+
+  {isPlaceholder && <p class="form-note">{t(lang, 'ask.placeholderNote')}</p>}
+</form>
+
+<script>
+  import { askService } from '@/lib/askService';
+
+  const COPY: Record<string, Record<string, string>> = {
+    sending: { en: 'Sending…', zh: '发送中…' },
+    success: { en: 'Thanks — your question landed. I answer when I can.', zh: '收到了 —— 我会尽量回复。' },
+    error: { en: 'Something went wrong on the way. Try again, or email me instead.', zh: '路上出了点问题。再试一次，或者直接给我发邮件。' },
+  };
+
+  document.querySelectorAll<HTMLFormElement>('[data-ask-form]').forEach((form) => {
+    const lang = (document.documentElement.lang.startsWith('zh') ? 'zh' : 'en') as 'en' | 'zh';
+    const status = form.querySelector<HTMLElement>('[data-ask-status]');
+    const submit = form.querySelector<HTMLButtonElement>('[data-ask-submit]');
+    const messageField = form.querySelector<HTMLTextAreaElement>('textarea[name="message"]');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!status || !submit || !messageField) return;
+
+      const message = messageField.value.trim();
+      if (!message) {
+        messageField.focus();
+        return;
+      }
+
+      const originalLabel = submit.textContent;
+      submit.disabled = true;
+      submit.textContent = COPY.sending[lang];
+      status.hidden = false;
+      status.dataset.kind = 'info';
+      status.textContent = '';
+
+      const data = new FormData(form);
+      const result = await askService.submit({
+        message,
+        name: (data.get('name') as string | null) ?? undefined,
+        email: (data.get('email') as string | null) ?? undefined,
+        lang,
+      });
+
+      submit.disabled = false;
+      submit.textContent = originalLabel;
+
+      if (result.ok) {
+        status.dataset.kind = 'success';
+        status.textContent = COPY.success[lang];
+        form.reset();
+      } else {
+        status.dataset.kind = 'error';
+        status.textContent = COPY.error[lang];
+      }
+    });
+  });
+</script>
+
+<style>
+  .ask-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 var(--sp-4);
+  }
+
+  @media (max-width: 640px) {
+    .ask-fields {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ask-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-4);
+  }
+
+  .ask-form.compact textarea {
+    min-height: 5rem;
+  }
+</style>

@@ -1,0 +1,74 @@
+---
+import type { Locale } from '@/i18n/config';
+import { localizedPath } from '@/i18n/config';
+import { t } from '@/i18n';
+import { site } from '@/data/site';
+import SupportBox from '@/components/SupportBox.astro';
+import Window from '@/components/Window.astro';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+---
+
+<div class="wrap page">
+  <Window title={t(lang, 'contact.title')} heading class="fade-in">
+    <div class="measure">
+      <p class="muted">{t(lang, 'contact.intro')}</p>
+
+      <section class="section">
+        <h2>{t(lang, 'contact.email')}</h2>
+        <p class="mono">
+          <a href={`mailto:${site.email}`}>{site.email}</a>
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>{t(lang, 'contact.social')}</h2>
+        <ul class="social-list">
+          {site.links.map((link) => (
+            <li>
+              <a href={link.url} rel="noopener noreferrer" target={link.url.startsWith('http') ? '_blank' : undefined}>
+                {link.label} <span class="faint">↗</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <SupportBox lang={lang} />
+
+      {
+        site.features.ask && (
+          <section class="section">
+            <div class="ask-teaser">
+              <p>
+                <strong>{t(lang, 'contact.askTitle')}</strong> — {t(lang, 'contact.askTeaser')}
+              </p>
+              <a class="btn" href={localizedPath(lang, '/ask')}>{t(lang, 'contact.askCta')}</a>
+            </div>
+          </section>
+        )
+      }
+    </div>
+  </Window>
+</div>
+
+<style>
+  .social-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .social-list li {
+    padding: var(--sp-3) 0;
+    border-bottom: 1px dashed var(--line-soft);
+  }
+
+  .social-list a {
+    text-decoration: none;
+  }
+</style>

@@ -1,0 +1,87 @@
+---
+import type { Locale } from '@/i18n/config';
+import { localizedPath } from '@/i18n/config';
+import { t } from '@/i18n';
+import { getPosts, getTags, paginate } from '@/lib/blog';
+import PostListItem from '@/components/PostListItem.astro';
+import Window from '@/components/Window.astro';
+
+interface Props {
+  lang: Locale;
+  tag?: string;
+  page?: number;
+}
+
+const { lang, tag, page = 1 } = Astro.props;
+const PER_PAGE = 8;
+
+const allPosts = await getPosts(lang);
+const tags = await getTags(lang);
+const tagged = tag ? allPosts.filter((p) => p.data.tags.includes(tag)) : allPosts;
+const result = paginate(tagged, page, PER_PAGE);
+
+// Static-friendly routes: /blog, /blog/tag/<tag>, /blog/page/<n>.
+const tagHref = (target?: string) => localizedPath(lang, target ? `/blog/tag/${target}` : '/blog');
+const pageHref = (n: number) => localizedPath(lang, n <= 1 ? '/blog' : `/blog/page/${n}`);
+---
+
+<div class="wrap page">
+  <Window title={t(lang, 'blog.title')} heading class="fade-in">
+    <p class="muted measure" style="margin-bottom: var(--sp-6)">{t(lang, 'blog.intro')}</p>
+
+  {
+    tags.length > 0 && (
+      <nav class="filter-bar" aria-label={t(lang, 'blog.tags')}>
+        <a href={tagHref()} class="tag" aria-pressed={tag ? 'false' : 'true'}>
+          {t(lang, 'blog.allTags')}
+        </a>
+        {tags.map(({ tag: name, count }) => (
+          <a href={tagHref(name)} class="tag" aria-pressed={tag === name ? 'true' : 'false'}>
+            {name} <span class="faint">{count}</span>
+          </a>
+        ))}
+      </nav>
+    )
+  }
+
+  {
+    tag && (
+      <p class="muted" style="margin-bottom: var(--sp-5)">
+        {t(lang, 'blog.tagged')}: <span class="tag">{tag}</span>
+      </p>
+    )
+  }
+
+  {
+    result.items.length === 0 ? (
+      <p class="muted">{t(lang, 'blog.none')}</p>
+    ) : (
+      <ul class="post-list">
+        {result.items.map((post) => (
+          <PostListItem post={post} lang={lang} />
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    result.totalPages > 1 && (
+      <nav class="pagination" aria-label={t(lang, 'blog.page', { n: result.current })}>
+        {result.prev ? (
+          <a href={pageHref(result.prev)}>← {t(lang, 'blog.prev')}</a>
+        ) : (
+          <span></span>
+        )}
+        <span class="spacer"></span>
+        <span class="faint">{t(lang, 'blog.page', { n: `${result.current} / ${result.totalPages}` })}</span>
+        <span class="spacer"></span>
+        {result.next ? (
+          <a href={pageHref(result.next)}>{t(lang, 'blog.next')} →</a>
+        ) : (
+          <span></span>
+        )}
+      </nav>
+    )
+  }
+  </Window>
+</div>

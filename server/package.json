@@ -1,0 +1,14 @@
+{
+  "name": "rkny6-ask-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Optional Ask Box proxy for rkny6.github.io. Deploy on any Node host if your ask provider needs a secret API key.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

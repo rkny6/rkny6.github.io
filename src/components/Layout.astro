@@ -1,0 +1,181 @@
+---
+import type { Locale } from '@/i18n/config';
+import { switchLangPath } from '@/i18n/config';
+import { t, type UIKey } from '@/i18n';
+import { site } from '@/data/site';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+
+interface Props {
+  lang: Locale;
+  /** Localized page title, e.g. t(lang, 'meta.projects'). */
+  titleKey: UIKey;
+  /** Localized meta description key. */
+  descriptionKey?: UIKey;
+  /** Raw description string, used instead of descriptionKey for dynamic pages. */
+  description?: string;
+  /** Override the title with a raw string (blog/project detail pages). */
+  rawTitle?: string;
+  /** Pathname of the same page in the other language, if one exists. */
+  altLangPath?: string;
+  ogType?: 'website' | 'article';
+  publishedTime?: Date;
+  modifiedTime?: Date;
+  noindex?: boolean;
+}
+
+const {
+  lang,
+  titleKey,
+  descriptionKey,
+  description,
+  rawTitle,
+  altLangPath,
+  ogType = 'website',
+  publishedTime,
+  modifiedTime,
+  noindex = false,
+} = Astro.props;
+
+const pageTitle = rawTitle ?? t(lang, titleKey);
+const fullTitle = `${pageTitle} — ${site.title}`;
+const metaDescription = description ?? (descriptionKey ? t(lang, descriptionKey) : t(lang, 'site.description'));
+
+const pathname = Astro.url.pathname;
+const canonical = new URL(pathname, Astro.site).href;
+
+// hreflang alternates for this page. Detail pages pass altLangPath when the
+// translated twin exists; otherwise fall back to the mechanical /zh swap.
+const otherLang = lang === 'en' ? 'zh' : 'en';
+const otherPath = altLangPath ?? switchLangPath(pathname, otherLang);
+const enPath = lang === 'en' ? pathname : otherPath;
+const zhPath = lang === 'zh' ? pathname : otherPath;
+
+const ogLocale = lang === 'en' ? 'en_US' : 'zh_CN';
+const ogLocaleAlt = lang === 'en' ? 'zh_CN' : 'en_US';
+
+// Site base path (empty on a GitHub Pages user site served from the root).
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Reuse the existing favicon as a lightweight OG/Twitter image. It is the
+// only image asset on the site; no complex image is generated for SEO.
+const ogImage = new URL(`${base}/favicon.svg`, Astro.site).href;
+---
+
+<!doctype html>
+<html lang={lang === 'en' ? 'en' : 'zh-CN'} data-base={base}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={metaDescription} />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
+    <link rel="canonical" href={canonical} />
+
+    <link rel="alternate" hreflang="en" href={new URL(enPath, Astro.site).href} />
+    <link rel="alternate" hreflang="zh" href={new URL(zhPath, Astro.site).href} />
+    <link rel="alternate" hreflang="x-default" href={new URL(enPath, Astro.site).href} />
+
+    <meta property="og:site_name" content={site.title} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={ogLocaleAlt} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={metaDescription} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:site" content="@rkny6" />
+    <meta name="twitter:creator" content="@rkny6" />
+
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <link rel="manifest" href={`${base}/site.webmanifest`} />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)" />
+
+    <!-- Apply stored theme before first paint to avoid a flash. -->
+    <script is:inline>
+      (() => {
+        const base = document.documentElement.dataset.base || '';
+        if (window.location.pathname !== `${base}/`) return;
+
+        const savedLocale = localStorage.getItem('site-locale');
+        const browserLanguages = [...(navigator.languages || []), navigator.language];
+        const prefersChinese = browserLanguages.some((language) => language.toLowerCase().startsWith('zh'));
+        const locale = savedLocale === 'zh' || savedLocale === 'en'
+          ? savedLocale
+          : prefersChinese ? 'zh' : 'en';
+
+        if (locale === 'zh') window.location.replace(`${base}/zh`);
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const stored = localStorage.getItem('theme');
+        const dark = stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
+
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t(lang, 'nav.skip')}</a>
+    <slot name="header">
+      <Header lang={lang} altLangPath={altLangPath} />
+    </slot>
+    <main id="main">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>
+
+<script>
+  // Mobile menu toggle
+  const toggle = document.querySelector<HTMLButtonElement>('.nav-toggle');
+  const menu = document.querySelector<HTMLElement>('.nav-mobile');
+  document.querySelector<HTMLAnchorElement>('.lang-switch')?.addEventListener('click', (event) => {
+    const target = event.currentTarget as HTMLAnchorElement;
+    const locale = target.dataset.localeTarget;
+    if (locale === 'en' || locale === 'zh') localStorage.setItem('site-locale', locale);
+  });
+
+  if (toggle && menu) {
+    toggle.addEventListener('click', () => {
+      const open = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!open));
+      menu.dataset.open = String(!open);
+    });
+    // Close the menu when a link is followed.
+    menu.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) {
+        toggle.setAttribute('aria-expanded', 'false');
+        menu.dataset.open = 'false';
+      }
+    });
+  }
+
+  // Theme toggle
+  const themeBtn = document.querySelector<HTMLButtonElement>('.theme-toggle');
+  themeBtn?.addEventListener('click', () => {
+    const root = document.documentElement;
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    localStorage.setItem('theme', next);
+    document
+      .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
+      .forEach((m) => {
+        if (m.media && m.media.includes('dark') === (next === 'dark')) {
+          m.content = next === 'dark' ? '#0b0b0b' : '#ffffff';
+        }
+      });
+  });
+</script>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>

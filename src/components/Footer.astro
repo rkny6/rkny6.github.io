@@ -1,0 +1,25 @@
+---
+import type { Locale } from '@/i18n/config';
+import { t } from '@/i18n';
+import { site } from '@/data/site';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <span>© {year} {site.title} · {t(lang, 'footer.built')}</span>
+    <nav aria-label={t(lang, 'footer.source')}>
+      {site.links.map((link) => (
+        <a href={link.url} rel="noopener noreferrer" target={link.url.startsWith('http') ? '_blank' : undefined}>
+          {link.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</footer>

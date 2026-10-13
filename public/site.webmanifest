@@ -1,0 +1,13 @@
+{
+  "name": "la sixième nuit",
+  "short_name": "6nuit",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff"
+}

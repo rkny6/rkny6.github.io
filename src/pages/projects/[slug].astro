@@ -1,0 +1,37 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import Layout from '@/components/Layout.astro';
+import ProjectDetailView from '@/views/ProjectDetailView.astro';
+import { getProjects, getProjectTranslation, projectSlug } from '@/lib/projects';
+import { localizedPath } from '@/i18n/config';
+
+export const getStaticPaths = (async () => {
+  const entries = await getProjects('en');
+  return entries.map((project) => ({
+    params: { slug: projectSlug(project) },
+    props: { project },
+  }));
+}) satisfies GetStaticPaths;
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+
+// Keep readers on the same project when switching language.
+const translation = await getProjectTranslation(project);
+const altLangPath = translation
+  ? localizedPath('zh', `/projects/${projectSlug(project)}`)
+  : localizedPath('zh', '/projects');
+---
+
+<Layout
+  lang="en"
+  titleKey="meta.projects"
+  rawTitle={project.data.title}
+  description={project.data.description}
+  altLangPath={altLangPath}
+>
+  <ProjectDetailView lang="en" project={project}>
+    <Content />
+  </ProjectDetailView>
+</Layout>

@@ -1,0 +1,19 @@
+---
+import Layout from '@/components/Layout.astro';
+import { localizedPath } from '@/i18n/config';
+import Window from '@/components/Window.astro';
+---
+
+<Layout lang="en" titleKey="meta.home" rawTitle="404 — Not found" description="This page does not exist." noindex>
+  <div class="wrap page" style="padding-block: var(--sp-8)">
+    <Window title="404" heading class="fade-in" >
+      <div style="text-align: center; padding-block: var(--sp-6)">
+        <h2 style="text-transform: none;">This page does not exist.</h2>
+        <p class="muted">The link may be old, or the page may have moved.</p>
+        <p style="margin-top: var(--sp-6)">
+          <a class="btn" href={localizedPath('en', '/')}>Back home</a>
+        </p>
+      </div>
+    </Window>
+  </div>
+</Layout>

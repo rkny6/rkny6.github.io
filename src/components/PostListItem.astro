@@ -1,0 +1,40 @@
+---
+import type { Locale } from '@/i18n/config';
+import { localizedPath } from '@/i18n/config';
+import { t, tf } from '@/i18n';
+import { formatDate, isoDate } from '@/lib/format';
+import type { BlogPost } from '@/lib/blog';
+import { postSlug, readingTime } from '@/lib/blog';
+
+interface Props {
+  post: BlogPost;
+  lang: Locale;
+  showDate?: boolean;
+}
+
+const { post, lang, showDate = true } = Astro.props;
+const slug = postSlug(post);
+const minutes = readingTime(post.body);
+---
+
+<li>
+  <article class="post-row">
+    {
+      showDate && (
+        <time class="date" datetime={isoDate(post.data.date)}>
+          {formatDate(post.data.date, lang)}
+        </time>
+      )
+    }
+    <div>
+      <h3>
+        <a href={localizedPath(lang, `/blog/${slug}`)}>{post.data.title}</a>
+      </h3>
+      <p class="desc">{post.data.description}</p>
+      <div class="post-meta">
+        <span>{tf(lang, 'blog.readTime', { n: minutes })}</span>
+        {post.data.tags.map((tag) => <span class="tag">{tag}</span>)}
+      </div>
+    </div>
+  </article>
+</li>

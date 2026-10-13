@@ -1,0 +1,155 @@
+---
+import type { Locale } from '@/i18n/config';
+import { localizedPath } from '@/i18n/config';
+import { t } from '@/i18n';
+import { site } from '@/data/site';
+import { pick } from '@/i18n';
+import { getFeaturedProjects } from '@/lib/projects';
+import { now } from '@/data/profile';
+import { getPosts, postSlug } from '@/lib/blog';
+import { formatDate } from '@/lib/format';
+import Window from '@/components/Window.astro';
+import ProjectListItem from '@/components/ProjectListItem.astro';
+import PostListItem from '@/components/PostListItem.astro';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const featured = (await getFeaturedProjects(lang)).slice(0, 3);
+const posts = await getPosts(lang);
+const recentPosts = posts.slice(0, 3);
+const logPosts = posts.slice(0, 5);
+const nowItems = pick(now.building, lang).slice(0, 2);
+const supportLinks = lang === 'zh'
+  ? [{ label: '爱发电', url: 'https://ifdian.net/a/rkny6' }]
+  : [
+      { label: 'Ko-fi', url: 'https://ko-fi.com/rkny6' },
+      { label: 'Gumroad', url: 'https://rkny6.gumroad.com/' },
+    ];
+
+// "Webring" window: walk the blog like a ring from the newest post.
+const ringCurrent = posts[0];
+const ringPrev = posts[1] ?? posts[0];
+const ringNext = posts.length > 2 ? posts[posts.length - 1] : posts[1] ?? posts[0];
+
+const SIDE_NAV = [
+  { key: 'about.title', path: '/about' },
+  { key: 'nav.projects', path: '/projects' },
+  { key: 'nav.blog', path: '/blog' },
+  { key: 'nav.now', path: '/now', hidden: !site.features.now },
+  { key: 'nav.contact', path: '/contact', hidden: !site.features.contact },
+  { key: 'nav.ask', path: '/ask', hidden: !site.features.ask },
+] as const;
+
+const sideNav = SIDE_NAV.filter((item) => !('hidden' in item && item.hidden));
+---
+
+<div class="wrap home-grid">
+  <div class="home-main">
+    <Window title={site.title} class="fade-in">
+      <div class="hero">
+        <p class="greeting">{t(lang, 'home.hi')} {site.handle} · {site.role[lang]}</p>
+        <h1>{site.tagline[lang]}</h1>
+        <p class="intro">{t(lang, 'home.intro')}</p>
+        <div class="links">
+          {site.links.map((link) => (
+            <a href={link.url} rel="noopener noreferrer" target={link.url.startsWith('http') ? '_blank' : undefined}>
+              {link.label} ↗
+            </a>
+          ))}
+          {supportLinks.map((link) => (
+            <a href={link.url} rel="noopener noreferrer" target="_blank">
+              {link.label} ↗
+            </a>
+          ))}
+        </div>
+      </div>
+    </Window>
+
+    <Window title={t(lang, 'home.featured')} class="fade-in fade-in-delay-1">
+      <div class="section-head">
+        <a class="more arrow-link" href={localizedPath(lang, '/projects')}>{t(lang, 'home.viewProjects')}</a>
+      </div>
+      <ul class="project-list">
+        {featured.map((project) => <ProjectListItem project={project} lang={lang} />)}
+      </ul>
+    </Window>
+
+    <Window title={t(lang, 'home.recent')} class="fade-in fade-in-delay-2">
+      <div class="section-head">
+        <a class="more arrow-link" href={localizedPath(lang, '/blog')}>{t(lang, 'home.viewPosts')}</a>
+      </div>
+      <ul class="post-list">
+        {recentPosts.map((post) => <PostListItem post={post} lang={lang} />)}
+      </ul>
+    </Window>
+
+    {
+      site.features.now && (
+        <Window title={t(lang, 'home.now')}>
+          <div class="section-head">
+            <a class="more arrow-link" href={localizedPath(lang, '/now')}>{t(lang, 'nav.now')}</a>
+          </div>
+          <div class="now-strip">
+            <ul>
+              {nowItems.map((item) => <li>{item}</li>)}
+            </ul>
+          </div>
+        </Window>
+      )
+    }
+
+    {
+      site.features.ask && (
+        <div class="ask-teaser">
+          <p>
+            <strong>{t(lang, 'home.askTitle')}</strong> — {t(lang, 'home.askTeaser')}
+          </p>
+          <a class="btn" href={localizedPath(lang, '/ask')}>{t(lang, 'home.askCta')}</a>
+        </div>
+      )
+    }
+  </div>
+
+  <aside class="home-side" aria-label={t(lang, 'nav.menu')}>
+    <Window title={t(lang, 'nav.menu')}>
+      <ul class="side-nav">
+        {sideNav.map((item) => (
+          <li>
+            <a href={localizedPath(lang, item.path)}>{t(lang, item.key)}</a>
+          </li>
+        ))}
+      </ul>
+    </Window>
+
+    {
+      ringCurrent && (
+        <Window title="WebThings">
+          <p class="mono" style="font-size: var(--text-xs); letter-spacing: 0.08em;">
+            - LA SIXIÈME NUIT WEBRING -
+          </p>
+          <p style="display: flex; gap: var(--sp-3); font-weight: 700;">
+            <a href={localizedPath(lang, `/blog/${postSlug(ringPrev)}`)}>[ ◂ Prev ]</a>
+            <a href={localizedPath(lang, `/blog/${postSlug(ringNext)}`)}>[ Next ▸ ]</a>
+          </p>
+          <p class="form-note">
+            {t(lang, 'home.ringNote')}
+          </p>
+        </Window>
+      )
+    }
+
+    <Window title={t(lang, 'home.updates')}>
+      <ul class="updates">
+        {logPosts.map((post) => (
+          <li>
+            <span class="date">{formatDate(post.data.date, lang)}</span>:{' '}
+            <a href={localizedPath(lang, `/blog/${postSlug(post)}`)}>{post.data.title}</a>
+          </li>
+        ))}
+      </ul>
+    </Window>
+  </aside>
+</div>

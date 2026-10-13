@@ -1,0 +1,17 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Layout from '@/components/Layout.astro';
+import BlogView from '@/views/BlogView.astro';
+import { getTags } from '@/lib/blog';
+
+export const getStaticPaths = (async () => {
+  const tags = await getTags('en');
+  return tags.map(({ tag }) => ({ params: { tag }, props: { tag } }));
+}) satisfies GetStaticPaths;
+
+const { tag } = Astro.props;
+---
+
+<Layout lang="en" titleKey="meta.blog" rawTitle={`${tag} — writing`} description={`Posts tagged "${tag}".`}>
+  <BlogView lang="en" tag={tag} />
+</Layout>

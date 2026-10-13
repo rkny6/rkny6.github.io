@@ -1,0 +1,44 @@
+---
+import type { Locale } from '@/i18n/config';
+import { t, pick } from '@/i18n';
+import { now } from '@/data/profile';
+import { formatDate } from '@/lib/format';
+import Window from '@/components/Window.astro';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+
+const SECTIONS = [
+  { key: 'now.building', items: now.building },
+  { key: 'now.reading', items: now.reading },
+  { key: 'now.learning', items: now.learning },
+  { key: 'now.listening', items: now.listening },
+] as const;
+---
+
+<div class="wrap page">
+  <Window title={t(lang, 'now.title')} heading class="fade-in">
+    <div class="measure">
+      <p class="muted">{t(lang, 'now.intro')}</p>
+      <p class="mono faint" style="margin-bottom: var(--sp-7)">
+        {t(lang, 'now.updated')}: {formatDate(new Date(now.updated), lang)}
+      </p>
+
+      {
+        SECTIONS.map(({ key, items }) => (
+          <section class="section">
+            <h2>{t(lang, key)}</h2>
+            <ul>
+              {pick(items, lang).map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+  </Window>
+</div>

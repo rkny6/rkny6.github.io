@@ -1,0 +1,22 @@
+---
+import type { Locale } from '@/i18n/config';
+import { t } from '@/i18n';
+import AskBox from '@/components/AskBox.astro';
+import Window from '@/components/Window.astro';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+---
+
+<div class="wrap page">
+  <Window title={t(lang, 'ask.title')} heading class="fade-in">
+    <div class="measure">
+      <p class="muted" style="margin-bottom: var(--sp-7)">{t(lang, 'ask.intro')}</p>
+
+      <AskBox lang={lang} />
+    </div>
+  </Window>
+</div>

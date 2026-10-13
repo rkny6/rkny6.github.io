@@ -1,0 +1,17 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Layout from '@/components/Layout.astro';
+import BlogView from '@/views/BlogView.astro';
+import { getTags } from '@/lib/blog';
+
+export const getStaticPaths = (async () => {
+  const tags = await getTags('zh');
+  return tags.map(({ tag }) => ({ params: { tag }, props: { tag } }));
+}) satisfies GetStaticPaths;
+
+const { tag } = Astro.props;
+---
+
+<Layout lang="zh" titleKey="meta.blog" rawTitle={`${tag} — 文章`} description={`标签「${tag}」下的文章。`}>
+  <BlogView lang="zh" tag={tag} />
+</Layout>

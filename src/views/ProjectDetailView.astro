@@ -1,0 +1,113 @@
+---
+import type { Locale } from '@/i18n/config';
+import { localizedPath } from '@/i18n/config';
+import { t } from '@/i18n';
+import type { ProjectEntry } from '@/lib/projects';
+import { getPosts, postSlug } from '@/lib/blog';
+import PostListItem from '@/components/PostListItem.astro';
+import Window from '@/components/Window.astro';
+
+interface Props {
+  lang: Locale;
+  project: ProjectEntry;
+}
+
+const { lang, project } = Astro.props;
+const d = project.data;
+
+const relatedPosts = d.relatedPosts.length
+  ? (await getPosts(lang)).filter((p) => d.relatedPosts.includes(postSlug(p)))
+  : [];
+---
+
+<div class="wrap page">
+  <Window title={t(lang, 'projects.title')} class="fade-in">
+    <p style="margin-bottom: var(--sp-6)">
+      <a class="back-link" href={localizedPath(lang, '/projects')}>
+        {t(lang, 'projects.back')}
+      </a>
+    </p>
+
+    <article class="measure">
+      <header>
+        <div class="post-meta" style="margin-bottom: var(--sp-3)">
+          <span class="status-pill" data-status={d.status}>{t(lang, `status.${d.status}`)}</span>
+          <span class="tag">{t(lang, `category.${d.category}`)}</span>
+        </div>
+        <h1>{d.title}</h1>
+        <p class="lede" style="margin-bottom: var(--sp-5)">{d.description}</p>
+
+        <dl class="facts">
+          <div>
+            <dt>{t(lang, 'projects.tech')}</dt>
+            <dd>{d.technologies.join(' · ')}</dd>
+          </div>
+          <div>
+            <dt>{t(lang, 'projects.category')}</dt>
+            <dd>{t(lang, `category.${d.category}`)}</dd>
+          </div>
+          <div>
+            <dt>{t(lang, 'projects.status')}</dt>
+            <dd>{t(lang, `status.${d.status}`)}</dd>
+          </div>
+        </dl>
+
+        <div class="project-links">
+          {d.github && <a class="btn" href={d.github} rel="noopener noreferrer" target="_blank">{t(lang, 'projects.source')}</a>}
+          {d.demo && <a class="btn" href={d.demo} rel="noopener noreferrer" target="_blank">{t(lang, 'projects.demo')}</a>}
+          {d.docs && <a class="btn" href={d.docs} rel="noopener noreferrer" target="_blank">{t(lang, 'projects.docs')}</a>}
+          {d.download && <a class="btn" href={d.download} rel="noopener noreferrer" target="_blank">{t(lang, 'projects.download')}</a>}
+        </div>
+      </header>
+
+      <section class="section prose">
+        <h2>{t(lang, 'projects.overview')}</h2>
+        <slot />
+      </section>
+
+      {
+        d.motivation && (
+          <section class="section prose">
+            <h2>{t(lang, 'projects.motivation')}</h2>
+            {d.motivation.map((p) => <p>{p}</p>)}
+          </section>
+        )
+      }
+
+      {
+        d.features && (
+          <section class="section prose">
+            <h2>{t(lang, 'projects.features')}</h2>
+            <ul>
+              {d.features.map((f) => <li>{f}</li>)}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        d.architecture && (
+          <section class="section prose">
+            <h2>{t(lang, 'projects.architecture')}</h2>
+            {d.architecture.map((p) => <p>{p}</p>)}
+          </section>
+        )
+      }
+
+      {
+        relatedPosts.length > 0 && (
+          <section class="section">
+            <div class="section-head">
+              <h2>{t(lang, 'projects.related')}</h2>
+            </div>
+            <ul class="post-list">
+              {relatedPosts.map((post) => (
+                <PostListItem post={post} lang={lang} />
+              ))}
+            </ul>
+          </section>
+        )
+      }
+    </article>
+  </Window>
+</div>

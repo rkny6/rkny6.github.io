@@ -1,0 +1,44 @@
+---
+title: 'Small APIs age well'
+date: 2026-05-14
+description: 'Every library I have maintained for more than three years shares one trait: a tiny surface area. The big ones did not survive.'
+tags: ['typescript', 'dx', 'tools']
+draft: true
+---
+
+I have maintained open-source libraries long enough to watch which design decisions survive contact with reality. The pattern is uncomfortable in its simplicity: the libraries with the smallest APIs are the ones still alive, and the clever ones are archived.
+
+## Surface area is a liability
+
+Every exported function is a promise. Not a promise about behavior — a promise about *your future attention*. Each one needs documentation that stays true, error messages that stay helpful, and a signature you cannot change without a conversation.
+
+```ts
+// tiny-query: the entire API
+const db = createDb({ url: process.env.DATABASE_URL });
+const rows = await db.query('select * from posts where tag = $1', [tag]);
+```
+
+Two functions. That is the whole library. When someone opens an issue about it, I can hold the entire design in my head while answering. That is not a trivial luxury — it is the reason I still answer.
+
+## Why clever APIs die
+
+The libraries I am proudest of architecturally are the ones I deprecated. They had builders, plugins, lifecycle hooks, a philosophy. And each one died the same way:
+
+1. A user hits an edge case the abstraction does not cover.
+2. They file an issue. The honest answer is "the abstraction is wrong for your case."
+3. I add an escape hatch. Escape hatches attract each other.
+4. Two years later the library has thirty escape hatches and no shape.
+
+The abstraction was not wrong because of the edge case. It was wrong because every abstraction eventually meets its edge case, and the cost of the meeting is paid entirely by the maintainer.
+
+## The boring alternative
+
+The alternative is not no abstraction. It is abstraction that stops one level earlier than feels elegant. Return plain rows instead of entity objects. Take a SQL string instead of a query builder. Accept a plain config object instead of a factory with middleware.
+
+Every one of those decisions feels slightly embarrassing on the day you make it, because a plain thing is less impressive than a clever thing. But embarrassment is cheap and maintenance is expensive.
+
+## What I actually optimize for now
+
+When designing an API I ask one question: *can I defend this signature forever?* Not "is this good today" — "when I have forgotten why I wrote this, in a repo I barely touch, can I still say no to feature requests without guilt?"
+
+Small APIs make "no" easy. That is their real feature. The small surface is not minimalism for its own sake; it is a boundary that protects the only scarce resource in open source, which is the maintainer's willingness to keep going.

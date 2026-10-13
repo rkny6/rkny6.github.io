@@ -1,0 +1,61 @@
+---
+import type { Locale } from '@/i18n/config';
+import { t } from '@/i18n';
+import { about } from '@/data/profile';
+import { site } from '@/data/site';
+import { pick } from '@/i18n';
+import SupportBox from '@/components/SupportBox.astro';
+import Window from '@/components/Window.astro';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+---
+
+<div class="wrap page">
+  <Window title={t(lang, 'about.title')} heading class="fade-in">
+    <div class="measure">
+      <p class="mono faint" style="margin-bottom: var(--sp-5)">{site.handle} · {site.role[lang]}</p>
+
+      <section class="section">
+        {pick(about.bio, lang).map((paragraph) => <p>{paragraph}</p>)}
+      </section>
+
+      <section class="section">
+        <h2>{t(lang, 'about.focus')}</h2>
+        <ul>
+          {pick(about.focus, lang).map((item) => <li>{item}</li>)}
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>{t(lang, 'about.interests')}</h2>
+        <ul>
+          {pick(about.interests, lang).map((item) => <li>{item}</li>)}
+        </ul>
+      </section>
+
+      <SupportBox lang={lang} />
+
+      <section class="section">
+        <h2>{t(lang, 'about.elsewhere')}</h2>
+        <p class="links-row">
+          {site.links.map((link) => (
+            <a href={link.url} rel="noopener noreferrer" target={link.url.startsWith('http') ? '_blank' : undefined}>
+              {link.label} ↗
+            </a>
+          ))}
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>{t(lang, 'contact.email')}</h2>
+        <p class="mono">
+          <a href={`mailto:${site.email}`}>{site.email}</a>
+        </p>
+      </section>
+    </div>
+  </Window>
+</div>

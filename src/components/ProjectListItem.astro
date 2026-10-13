@@ -1,0 +1,38 @@
+---
+import type { Locale } from '@/i18n/config';
+import { localizedPath } from '@/i18n/config';
+import { t } from '@/i18n';
+import type { ProjectEntry } from '@/lib/projects';
+import { projectSlug } from '@/lib/projects';
+
+interface Props {
+  project: ProjectEntry;
+  lang: Locale;
+}
+
+const { project, lang } = Astro.props;
+const d = project.data;
+const detailHref = localizedPath(lang, `/projects/${projectSlug(project)}`);
+---
+
+<li data-category={d.category}>
+  <article class="project-row">
+    <div class="title-line">
+      <h3>
+        <a href={detailHref}>{d.title}</a>
+      </h3>
+      <span class="status-pill" data-status={d.status}>{t(lang, `status.${d.status}`)}</span>
+      <span class="tag">{t(lang, `category.${d.category}`)}</span>
+    </div>
+    <div class="links">
+      {d.github && <a href={d.github} rel="noopener noreferrer" target="_blank">{t(lang, 'projects.source')}</a>}
+      {d.demo && <a href={d.demo} rel="noopener noreferrer" target="_blank">{t(lang, 'projects.demo')}</a>}
+      {d.docs && <a href={d.docs} rel="noopener noreferrer" target="_blank">{t(lang, 'projects.docs')}</a>}
+      {d.download && <a href={d.download} rel="noopener noreferrer" target="_blank">{t(lang, 'projects.download')}</a>}
+    </div>
+    <p class="desc">{d.description}</p>
+    <div class="project-tech">
+      {d.technologies.map((tech) => <span class="tag">{tech}</span>)}
+    </div>
+  </article>
+</li>

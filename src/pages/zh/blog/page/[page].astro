@@ -1,0 +1,22 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Layout from '@/components/Layout.astro';
+import BlogView from '@/views/BlogView.astro';
+import { getPosts } from '@/lib/blog';
+
+export const getStaticPaths = (async () => {
+  const PER_PAGE = 8;
+  const posts = await getPosts('zh');
+  const totalPages = Math.ceil(posts.length / PER_PAGE);
+  return Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) => ({
+    params: { page: String(i + 2) },
+    props: { page: i + 2 },
+  }));
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+---
+
+<Layout lang="zh" titleKey="meta.blog" descriptionKey="meta.blog.desc">
+  <BlogView lang="zh" page={page} />
+</Layout>

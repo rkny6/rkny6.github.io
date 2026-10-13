@@ -1,0 +1,40 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import Layout from '@/components/Layout.astro';
+import PostDetailView from '@/views/PostDetailView.astro';
+import { getPosts, getPostTranslation, postSlug } from '@/lib/blog';
+import { localizedPath } from '@/i18n/config';
+
+export const getStaticPaths = (async () => {
+  const posts = await getPosts('zh');
+  return posts.map((post) => ({
+    params: { slug: postSlug(post) },
+    props: { post },
+  }));
+}) satisfies GetStaticPaths;
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+// Keep readers on the same article when switching language.
+const translation = await getPostTranslation(post);
+const altLangPath = translation
+  ? localizedPath('en', `/blog/${postSlug(post)}`)
+  : localizedPath('en', '/blog');
+---
+
+<Layout
+  lang="zh"
+  titleKey="meta.blog"
+  rawTitle={post.data.title}
+  description={post.data.description}
+  ogType="article"
+  publishedTime={post.data.date}
+  modifiedTime={post.data.updated}
+  altLangPath={altLangPath}
+>
+  <PostDetailView lang="zh" post={post}>
+    <Content />
+  </PostDetailView>
+</Layout>
